@@ -274,7 +274,7 @@ StatusOr<LogicalType> JDBCScanner::_precheck_data_type(const std::string& java_c
                     fmt::format("Type mismatches on column[{}], JDBC result type is Time, please set the type to time",
                                 slot_desc->col_name()));
         }
-        return TYPE_VARCHAR;
+        return TYPE_TIME;
     } else if (java_class == "java.time.LocalDateTime") {
         if (type != TYPE_DATETIME) {
             return Status::NotSupported(fmt::format(

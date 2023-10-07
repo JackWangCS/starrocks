@@ -47,6 +47,7 @@ public class UDFHelper {
     public static final int TYPE_VARCHAR = 17;
     public static final int TYPE_ARRAY = 19;
     public static final int TYPE_BOOLEAN = 24;
+    public static final int TYPE_TIME = 44;
     public static final int TYPE_DATETIME = 51;
 
     private static final byte[] emptyBytes = new byte[0];
@@ -193,6 +194,24 @@ public class UDFHelper {
         Platform.copyMemory(dataArr, Platform.DOUBLE_ARRAY_OFFSET, null, addrs[1], numRows * 8L);
     }
 
+    private static void getDoubleTimeResult(int numRows, Time[] boxedArr, long columnAddr) {
+        byte[] nulls = new byte[numRows];
+        double[] dataArr = new double[numRows];
+        for (int i = 0; i < numRows; i++) {
+            if (boxedArr[i] == null) {
+                nulls[i] = 1;
+            } else {
+                dataArr[i] = boxedArr[i].getTime();
+            }
+        }
+
+        final long[] addrs = getAddrs(columnAddr);
+        // memcpy to uint8_t array
+        Platform.copyMemory(nulls, Platform.BYTE_ARRAY_OFFSET, null, addrs[0], numRows);
+        // memcpy to int array
+        Platform.copyMemory(dataArr, Platform.DOUBLE_ARRAY_OFFSET, null, addrs[1], numRows * 8L);
+    }
+
     private static void getStringDateResult(int numRows, Date[] column, long columnAddr) {
         // TODO: return timestamp
         String[] results = new String[numRows];
@@ -307,6 +326,10 @@ public class UDFHelper {
                 getBigIntBoxedResult(numRows, (Long[]) boxedResult, columnAddr);
                 break;
             }
+            case TYPE_TIME: {
+                getDoubleTimeResult(numRows, (Time[]) boxedResult, columnAddr);
+                break;
+            }
             case TYPE_VARCHAR: {
                 if (boxedResult instanceof Date[]) {
                     getStringDateResult(numRows, (Date[]) boxedResult, columnAddr);
@@ -314,8 +337,6 @@ public class UDFHelper {
                     getStringDateTimeResult(numRows, (LocalDateTime[]) boxedResult, columnAddr);
                 } else if (boxedResult instanceof Timestamp[]) {
                     getStringTimeStampResult(numRows, (Timestamp[]) boxedResult, columnAddr);
-                } else if (boxedResult instanceof Time[]) {
-                    getStringTimeResult(numRows, (Time[]) boxedResult, columnAddr);
                 } else if (boxedResult instanceof BigDecimal[]) {
                     getStringDecimalResult(numRows, (BigDecimal[]) boxedResult, columnAddr);
                 } else if (boxedResult instanceof BigInteger[]) {
